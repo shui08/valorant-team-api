@@ -16,9 +16,9 @@ import (
 func InitializeTeamRoutes(router *mux.Router) {
 	// for example, if a HTTP "POST" request hits the /player endpoint, the
 	// controllers.CreatePlayer function will be called.
-	router.HandleFunc("/player", controllers.CreatePlayer).Methods("POST")
-	router.HandleFunc("/player", controllers.GetAllPlayers).Methods("GET")
-	router.HandleFunc("/player/{user}", controllers.GetPlayerByUser).Methods("GET")
-	router.HandleFunc("/player/{user}", controllers.UpdatePlayer).Methods("PUT")
-	router.HandleFunc("/player/{user}", controllers.DeletePlayer).Methods("DELETE")
+	router.HandleFunc("/players", controllers.CreatePlayer).Methods("POST")
+	router.HandleFunc("/players", controllers.GetAllPlayers).Methods("GET")
+	router.HandleFunc("/players/{riotid}", controllers.GetPlayerByID).Methods("GET")
+	router.HandleFunc("/players/{riotid}", controllers.UpdatePlayer).Methods("PUT")
+	router.HandleFunc("/players/{riotid}", controllers.DeletePlayer).Methods("DELETE")
 }
