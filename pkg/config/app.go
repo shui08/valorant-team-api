@@ -4,13 +4,24 @@
 package config
 
 import (
+	"os"
+
+	"github.com/joho/godotenv"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 )
 
 // declaring db, which will be used to refer to the database connection
 var db *gorm.DB
-var placeholder string
+
+// init() functions are run automatically when the package loads, this is simply
+// to load any environment variables
+func init() {
+	err := godotenv.Load()
+	if err != nil {
+		panic(err)
+	}
+}
 
 // this function is what creates a connection to the database, and we will use
 // gorm to do so. the reason for using gorm is so that we can interact with the
@@ -22,7 +33,8 @@ var placeholder string
 // that error is non-nil, we will call panic. we then set db, the package-wide
 // connection instance variable, equal to data.
 func Connect() {
-	data, err := gorm.Open(mysql.Open(placeholder), &gorm.Config{})
+	dsn := os.Getenv("DB_DSN")
+	data, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
 	if err != nil {
 		panic(err)
 	}
