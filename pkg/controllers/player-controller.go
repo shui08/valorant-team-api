@@ -14,6 +14,7 @@ const (
 	CONTENT_TYPE = "Content-Type"
 	JSON         = "application/json"
 	RIOT_ID      = "riotid"
+	DELETION_ERR = "Failed to delete players"
 )
 
 // this function is a handler for GET requests to the /players endpoint. it
@@ -71,6 +72,28 @@ func CreatePlayer(w http.ResponseWriter, r *http.Request) {
 
 	// encode player into JSON format and write to w.
 	utils.Write(w, player)
+}
+
+// this function is a handler for DELETE requests to the /players endpoint.
+func DeleteAllPlayers(w http.ResponseWriter, r *http.Request) {
+
+	// sets the "Content-Type" header of the HTTP response to JSON format.
+	w.Header().Set(CONTENT_TYPE, JSON)
+
+	// deleting all players from the database (see models.DeleteAll()) and
+	// storing them in a slice
+	deletedPlayers, err := models.DeleteAll()
+
+	// if an error occurs while deleting all players, send an error in the
+	// response, rather than showing a list of players that weren't actually
+	// deleted
+	if err != nil {
+		http.Error(w, DELETION_ERR, http.StatusInternalServerError)
+		return
+	}
+
+	// encode deletedPlayers into JSON format and write to w.
+	utils.Write(w, deletedPlayers)
 }
 
 // this function is a handler for DELETE requests to the /players/{riotid}

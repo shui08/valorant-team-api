@@ -18,6 +18,7 @@ func InitializeTeamRoutes(router *mux.Router) {
 	// controllers.CreatePlayer function will be called.
 	router.HandleFunc("/players", controllers.CreatePlayer).Methods("POST")
 	router.HandleFunc("/players", controllers.GetAllPlayers).Methods("GET")
+	router.HandleFunc("/players", controllers.DeleteAllPlayers).Methods("DELETE")
 	router.HandleFunc("/players/{riotid}", controllers.GetPlayerByID).Methods("GET")
 	router.HandleFunc("/players/{riotid}", controllers.UpdatePlayer).Methods("PUT")
 	router.HandleFunc("/players/{riotid}", controllers.DeletePlayer).Methods("DELETE")

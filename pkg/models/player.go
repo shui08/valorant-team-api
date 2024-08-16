@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	RIOT_COND = "RiotID = ?"
+	RIOT_COND = "riot_id = ?"
 )
 
 // used to refer to the database connection
@@ -17,7 +17,7 @@ var db *gorm.DB
 // the model for what data a player instance will hold. the JSON tags specify
 // how the data will be displayed when marshaled to JSON.
 type Player struct {
-	RiotID         string  `json:"riotid"`
+	RiotID         string  `json:"riotid"` // must be entered in form: USER-TAG. ex: John-123
 	IRLName        string  `json:"irlname"`
 	Team           string  `json:"team"`
 	Rank           string  `json:"rank"`
@@ -25,8 +25,8 @@ type Player struct {
 	Main           string  `json:"main"`
 	ACS            float64 `json:"acs"`
 	KDR            float64 `json:"kdr"`
-	DamagePerRound float64 `json:"dmg/round"`
-	HS             float64 `json:"hs%"`
+	DamagePerRound float64 `json:"dpr"`
+	HS             float64 `json:"hs"`
 }
 
 // init() functions are run automatically when the package loads.
@@ -117,4 +117,26 @@ func DeletePlayer(RiotID string) Player {
 
 	// return the deleted player
 	return player
+}
+
+// this function deletes all players from the database and should be used with
+// caution.
+func DeleteAll() ([]Player, error) {
+	// creating a slice to store the players in
+	var players []Player
+
+	// querying the database for all players and storing them in `players`
+	db.Find(&players)
+
+	// enabling global updates, which allows large batch deletions, and then
+	// deleting all player records from the database
+	deleteResult := db.Session(&gorm.Session{AllowGlobalUpdate: true}).Delete(&Player{})
+
+	// if the deletion fails, return an error
+	if deleteResult.Error != nil {
+		return nil, deleteResult.Error
+	}
+
+	// otherwise, return the slice of players
+	return players, nil
 }
