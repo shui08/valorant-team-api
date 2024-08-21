@@ -11,10 +11,12 @@ import (
 )
 
 const (
-	CONTENT_TYPE = "Content-Type"
-	JSON         = "application/json"
-	RIOT_ID      = "riotid"
-	DELETION_ERR = "Failed to delete players"
+	CONTENT_TYPE     = "Content-Type"
+	JSON             = "application/json"
+	RIOT_ID          = "riotid"
+	DELETION_ERR     = "Failed to delete players"
+	NO_REQUEST_BODY  = "No request body"
+	PLAYER_NOT_FOUND = "Player not found"
 )
 
 // this function is a handler for GET requests to the /players endpoint. it
@@ -124,7 +126,14 @@ func UpdatePlayer(w http.ResponseWriter, r *http.Request) {
 	// create a new pointer to an empty Player, then parse the request body into
 	// that Player struct
 	updatedPlayer := &models.Player{}
-	utils.ParseBody(r, updatedPlayer)
+	err := utils.ParseBody(r, updatedPlayer)
+
+	// if there is an error parsing the request body, then it is likely that the
+	// request does not have a body
+	if err != nil {
+		http.Error(w, NO_REQUEST_BODY, http.StatusBadRequest)
+		return
+	}
 
 	// extract riotid from the route pattern
 	params := mux.Vars(r)
@@ -134,40 +143,19 @@ func UpdatePlayer(w http.ResponseWriter, r *http.Request) {
 	// and store that data in existingPlayer (type Player) and db (type gorm.DB)
 	existingPlayer, db := models.GetPlayerByID(riotID)
 
-	// update the existing player's fields with fields from the updatedPlayer.
-	// if the request body contains only the fields the client wishes to update
-	// and leaves all other fields empty, this code prevents the existing
-	// player's data from being overwritten with empty data.
-	if updatedPlayer.IRLName != "" {
-		existingPlayer.IRLName = updatedPlayer.IRLName
-	}
-	if updatedPlayer.Team != "" {
-		existingPlayer.Team = updatedPlayer.Team
-	}
-	if updatedPlayer.Rank != "" {
-		existingPlayer.Rank = updatedPlayer.Rank
-	}
-	if updatedPlayer.Role != "" {
-		existingPlayer.Role = updatedPlayer.Role
-	}
-	if updatedPlayer.Main != "" {
-		existingPlayer.Main = updatedPlayer.Main
-	}
-	if updatedPlayer.ACS != 0 {
-		existingPlayer.ACS = updatedPlayer.ACS
-	}
-	if updatedPlayer.KDR != 0 {
-		existingPlayer.KDR = updatedPlayer.KDR
-	}
-	if updatedPlayer.DamagePerRound != 0 {
-		existingPlayer.DamagePerRound = updatedPlayer.DamagePerRound
-	}
-	if updatedPlayer.HS != 0 {
-		existingPlayer.HS = updatedPlayer.HS
+	// if existingPlayer's RiotID field is an empty string, then
+	// models.GetPlayerByID could not find a record with the specified RiotID
+	// and instead populated existingPlayer with zero values.
+	if existingPlayer.RiotID == "" {
+		http.Error(w, PLAYER_NOT_FOUND, http.StatusNotFound)
+		return
 	}
 
-	// save the newly updated existingPlayer data to the database
-	db.Save(existingPlayer)
+	// this finds existingPlayer in the database and updates its record to
+	// the new values in updatedPlayer. this also ignores zero values in
+	// updatePlayer, so that any unspecified fields (which will default to
+	// having a zero value) will not override existing fields in existingPlayer.
+	db.Model(&existingPlayer).Updates(updatedPlayer)
 
 	// encode existingPlayer into JSON format and write to w.
 	utils.Write(w, existingPlayer)

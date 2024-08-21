@@ -15,9 +15,11 @@ const (
 var db *gorm.DB
 
 // the model for what data a player instance will hold. the JSON tags specify
-// how the data will be displayed when marshaled to JSON.
+// how the data will be displayed when marshaled to JSON. the gorm tag specifies
+// that RiotID will be used as the primary key (RiotID will be used to uniquely
+// identify each player)
 type Player struct {
-	RiotID         string  `json:"riotid"` // must be entered in form: USER-TAG. ex: John-123
+	RiotID         string  `gorm:"primaryKey" json:"riotid"` // must be entered in form: USER-TAG. ex: John-123
 	IRLName        string  `json:"irlname"`
 	Team           string  `json:"team"`
 	Rank           string  `json:"rank"`
