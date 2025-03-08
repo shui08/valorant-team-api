@@ -31,7 +31,7 @@ func init() {
 // well as a config struct, and actually creates the database connection, which
 // is stored in `data` as a *gorm.DB instance. it also returns an error, and if
 // that error is non-nil, we will call panic. we then set db, the package-wide
-// connection instance variable, equal to data.
+// connection instance variable, = to data.
 func Connect() {
 	dsn := os.Getenv("DB_DSN")
 	data, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
