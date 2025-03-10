@@ -1,8 +1,11 @@
+// player.go:
 // this code contains the player struct, as well as logic for directly
 // interacting with the database.
 package models
 
 import (
+	"fmt"
+
 	"github.com/shui08/valorant-team-api/pkg/config"
 	"gorm.io/gorm"
 )
@@ -54,11 +57,10 @@ func init() {
 
 // this function "creates" a player by adding the player to the database. it
 // has a receiver that points to a Player instance, and returns that pointer
-func (player *Player) AddPlayer() *Player {
-
+func (player *Player) AddPlayer() error {
 	// this creates a new record for the player data inside the database.
-	db.Create(player)
-	return player
+	result := db.Create(player)
+	return result.Error
 }
 
 // this function will query for all players in the database and return those
@@ -80,7 +82,6 @@ func GetAllPlayers() []Player {
 
 // this function retrieves a player by their Riot ID.
 func GetPlayerByID(RiotID string) (*Player, *gorm.DB) {
-
 	// declaring a Player instance whose fields we will populate with the query
 	// results from db.Find
 	var player Player
@@ -89,18 +90,16 @@ func GetPlayerByID(RiotID string) (*Player, *gorm.DB) {
 	// RiotID argument. the player instance's fields will then be populated with
 	// the resulting data. we also initialize a new local db variable, which
 	// is of type gorm.DB and holds the results of the query.
-	db := db.Find(&player, RIOT_COND, RiotID)
-
+	dbResult := db.Find(&player, RIOT_COND, RiotID)
 	// return the newly populated player instance and the local db variable.
 	// the db variable will be useful for controllers.UpdatePlayer, when we have
 	// to update a record in the database.
-	return &player, db
+	return &player, dbResult
 }
 
 // this function deletes the player specified by the RiotID argument from the
 // database. it then returns that player instance.
-func DeletePlayer(RiotID string) Player {
-
+func DeletePlayer(RiotID string) (Player, error) {
 	// declaring a Player instance whose fields we will populate with the query
 	// results from db.Find
 	var player Player
@@ -108,17 +107,24 @@ func DeletePlayer(RiotID string) Player {
 	// querying the database for a player whose riot id matches the specified
 	// RiotID argument. the player instance's fields will then be populated with
 	// the resulting data.
-	db.Find(&player, RIOT_COND, RiotID)
+	result := db.Find(&player, RIOT_COND, RiotID)
+	if result.Error != nil {
+		return player, result.Error
+	}
+
+	if player.RiotID == "" {
+		return player, fmt.Errorf("player with riotid %s not found", RiotID)
+	}
 
 	// once again querying for a player whose riot id matches the RiotID
-	// argument, and then deleting that player from the database. (i query twice
-	// because i honestly am not sure whether the query from the previous line
-	// of code carries over, and i do not want to accidentally perform a batch
-	// deletion).
-	db.Where(RIOT_COND, RiotID).Delete(&player)
+	// argument, and then deleting that player from the database.
+	delResult := db.Where(RIOT_COND, RiotID).Delete(&player)
+	if delResult.Error != nil {
+		return player, delResult.Error
+	}
 
 	// return the deleted player
-	return player
+	return player, nil
 }
 
 // this function deletes all players from the database and should be used with
